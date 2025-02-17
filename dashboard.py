@@ -6,9 +6,16 @@ import streamlit as st
 # Function to load and process data
 @st.cache_data
 def load_data(file_path):
-    df = pd.read_csv(file_path, parse_dates=[
-        'create_date', 'submit_history_date', 'first_sent_to_expert_date', 'final_opinion_date', 'close_date', 'follow_up_date'
-    ])
+    df = pd.read_csv(file_path)
+
+    # Explicitly convert date columns
+    date_cols = [
+        'create_date', 'submit_history_date', 'first_sent_to_expert_date', 
+        'final_opinion_date', 'close_date', 'follow_up_date'
+    ]
+    for col in date_cols:
+        df[col] = pd.to_datetime(df[col], errors='coerce')  # Convert, setting invalid ones to NaT
+
     return df
 
 # Streamlit UI
@@ -28,6 +35,12 @@ if uploaded_file:
 
     gustave_start = st.sidebar.selectbox("Select Start Date for Gustave Time", df.columns, index=df.columns.get_loc('first_sent_to_expert_date'))
     gustave_end = st.sidebar.selectbox("Select End Date for Gustave Time", df.columns, index=df.columns.get_loc('final_opinion_date'))
+
+    # Ensure selected columns are datetime
+    df[plusone_start] = pd.to_datetime(df[plusone_start], errors='coerce')
+    df[plusone_end] = pd.to_datetime(df[plusone_end], errors='coerce')
+    df[gustave_start] = pd.to_datetime(df[gustave_start], errors='coerce')
+    df[gustave_end] = pd.to_datetime(df[gustave_end], errors='coerce')
 
     # Compute custom time differences
     df['plusone_time'] = (df[plusone_end] - df[plusone_start]).dt.days
